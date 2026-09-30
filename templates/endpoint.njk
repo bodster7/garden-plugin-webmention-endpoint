@@ -1,0 +1,11 @@
+{#-
+  Advertises https://webmention.io/<domain>/webmention. The domain setting is
+  normalised (trim, lowercase, drop scheme, path, query and fragment); if what's
+  left isn't hostname-shaped, nothing is emitted. Variables are prefixed because
+  {% set %} in an included template leaks into the including layout.
+-#}
+{%- set webmentionEndpointDomain = (pluginSettings.domain or "") | string | trim | lower | replace(r/^https?:\/\//, "") -%}
+{%- set webmentionEndpointDomain = webmentionEndpointDomain.split("/")[0].split("?")[0].split("#")[0] -%}
+{%- if r/^[a-z0-9.-]+(:[0-9]+)?$/.test(webmentionEndpointDomain) %}
+<link rel="webmention" href="https://webmention.io/{{ webmentionEndpointDomain }}/webmention">
+{%- endif -%}

@@ -1,0 +1,20 @@
+{
+  "id": "webmention-endpoint",
+  "name": "Webmention Endpoint",
+  "version": "0.1.0",
+  "description": "Advertises a webmention.io endpoint on every page so your garden can receive webmentions, without editing the site template.",
+  "author": "Ian Henderson",
+  "slots": {
+    "common.head": "templates/endpoint.njk"
+  },
+  "settings": [
+    {
+      "key": "domain",
+      "name": "Webmention.io account domain",
+      "description": "Domain you log in to webmention.io with. Can differ from this garden's domain.",
+      "type": "text",
+      "default": "",
+      "env": "WEBMENTION_ENDPOINT_DOMAIN"
+    }
+  ]
+}
