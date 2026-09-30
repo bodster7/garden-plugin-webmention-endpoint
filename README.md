@@ -8,6 +8,8 @@ A [Digital Garden](https://github.com/oleeskild/digitalgarden) plugin that lets 
 
 It's for gardens where you can't edit the site template, such as ones hosted on [Forestry.md](https://forestry.md), but it works on any garden.
 
+![The webmention tag in a page's head](screenshot.png)
+
 ## What it does and doesn't do
 
 - **Does:** advertise where other sites should send webmentions for your pages.
