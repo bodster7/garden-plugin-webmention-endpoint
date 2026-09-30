@@ -1,8 +1,9 @@
 # SPEC: garden-plugin-webmention-endpoint
 
-- Plugin id: `dg-webmention-endpoint` (manifest `id`, folder name and gallery `id` all identical)
-- Dev location: `bodster_garden/src/plugins/dg-webmention-endpoint/` (own git repo, ignored by the garden)
-- Garden branch: `dg-webmention-endpoint-dev`
+- Plugin id: `webmention-endpoint` (manifest `id`, folder name and gallery `id` all identical).
+  Not `dg-`: that prefix is reserved for first-party plugins (garden-plugin-author skill).
+- Dev location: `bodster_garden/src/plugins/webmention-endpoint/` (own git repo, ignored by the garden)
+- Garden branch: `dg-webmention-endpoint-dev` (branch name only; kept as is)
 
 ## Purpose
 Advertise a webmention.io receiving endpoint on every page of a Digital Garden,
@@ -27,39 +28,68 @@ The forestry domain never needs its own webmention.io login (IndieAuth), which i
 what makes this a workaround for hosted gardens.
 
 ## Setting
-| key | label | type | default |
-|---|---|---|---|
-| `domain` | Webmention.io account domain | string | empty |
+Manifest `settings` entry:
 
-Help text: "Domain you log in to webmention.io with. Can differ from this garden's domain."
+```json
+{
+  "key": "domain",
+  "name": "Webmention.io account domain",
+  "description": "Domain you log in to webmention.io with. Can differ from this garden's domain.",
+  "type": "text",
+  "default": "",
+  "env": "WEBMENTION_ENDPOINT_DOMAIN"
+}
+```
+
+Resolution order (loader): value stored in `src/plugins/plugins.json` → env var → `default`.
+Set `env` explicitly: without it the loader falls back to an env var named `domain`.
+Don't reuse `WEBMENTION_IO_DOMAIN`: the webmentions display plugin reads that, and
+there it should hold the *garden* domain, not the account domain.
 
 ## Behaviour
-1. Map a template to the `common.head` slot (same slot the analytics plugin uses).
+1. Map a template to the `common.head` slot:
+   `"slots": { "common.head": "templates/endpoint.njk" }`.
+   Core renders `common.head` on notes and the home page (`note.njk`, `index.njk`);
+   the 404 and random-note pages have no plugin slots, which is fine for receiving.
 2. Emit exactly:
    `<link rel="webmention" href="https://webmention.io/{domain}/webmention">`
-3. Normalise `domain` first: trim, lowercase, strip `http://`/`https://`,
-   strip any path and trailing slashes. `https://Bodster.com/` → `bodster.com`.
-4. HTML-escape the output.
-5. If `domain` is empty after normalisation, emit **nothing** (no broken endpoint).
-6. No hooks entrypoint, styles or runtime JS unless the plugin API requires them.
+3. Normalise `pluginSettings.domain` first, in the template: trim, lowercase, strip
+   `http://`/`https://`, keep only what's before the first `/`, `?` or `#` (this drops
+   paths and trailing slashes). `https://Bodster.com/` → `bodster.com`.
+4. Output escaping: Nunjucks autoescape is on (Eleventy 3 default, not overridden in
+   `.eleventy.js`), so `{{ }}` escapes; no `| safe`, no explicit escape filter needed.
+5. If the normalised value is empty **or not hostname-shaped** (`^[a-z0-9.-]+(:[0-9]+)?$`),
+   emit **nothing** (no broken endpoint).
+6. Files: `garden-plugin.json` + `templates/endpoint.njk` only. No hooks, styles or
+   runtime JS (none are required; `dg-link-preview` is a slots-only precedent).
 
-## Known unknowns (Claude Code: verify against the skill before coding)
-- Exact manifest schema for settings and slots.
-- How a slot template reads a plugin setting.
-- Whether normalisation can live in the template (Nunjucks filters) or needs a
-  hook/filter in JS.
-- Whether a plugin with no hooks entrypoint is valid.
-- Whether the loader requires folder name == manifest id, and what folder
-  "Install from GitHub" creates (expected: `src/plugins/<id>/`).
-- Whether the `dg-` id prefix is reserved or conventional for core plugins
-  (core uses e.g. `dg-search`). If so, flag it before we commit to the name.
+## Resolved unknowns (checked against the skill and `src/helpers/pluginLoader.js`, 2026-09-30)
+- **Manifest schema**: required `id`, `name`, `version`, `description`, `author`.
+  Optional `slots` (`{ "<slot>": "file.njk" }` or a list), `settings` (see above).
+  Declared paths must be relative, `/`-separated, no `..`.
+- **Reading a setting in a slot template**: `pluginSettings.domain`
+  (bound per plugin by `components/pluginSlot.njk`).
+- **Normalisation**: template-only, with Nunjucks `trim`, `lower`, `replace` (regex
+  literal `r/^https?:\/\//`) and JS string methods such as `.split("/")[0]`.
+  No JS filter/hook needed. Confirm the regex literal in test 2.
+- **No hooks entrypoint**: valid; `hooks` is optional.
+- **Folder name == id**: enforced; mismatch → plugin skipped with a `[plugins]` warning.
+  Install from GitHub creates `src/plugins/<id>/` (confirmed by `plugins.json` records,
+  e.g. `bodster7/garden-plugin-croutons` → `src/plugins/croutons/`).
+- **`dg-` prefix**: reserved for first-party plugins. The loader doesn't enforce it,
+  but the skill forbids it, and `npm test` treats `src/plugins/dg-*` as core.
+  Hence the id `webmention-endpoint`.
 
 ## Test plan
 1. **Local build** (bodster_garden, branch `dg-webmention-endpoint-dev`): run the dev build,
    then `curl -s http://localhost:8080/ | findstr webmention`.
-   Expect two tags: the hand-added slot one and the plugin's. Both should be identical.
-2. **Normalisation**: try `https://Bodster.com/`, `bodster.com/`, empty. Check the output
-   each time; empty must produce no tag.
+   Expect two tags: the hand-added user component
+   (`components/user/common/head/webmention.njk`) and the plugin's. Same `href`;
+   the hand-added one ends ` />`, the plugin's `>`, so they're equivalent, not byte-identical.
+   Also check the build log has no `[plugins]` warnings, and that disabling the plugin
+   (`plugins.json` → `"webmention-endpoint": { "enabled": false }`) leaves only the hand-added tag.
+2. **Normalisation**: try `https://Bodster.com/`, `bodster.com/`, `bodster.com/path?q=1`,
+   `bad domain`, empty. Check the output each time; the last two must produce no tag.
 3. **Forestry**: tag `v0.1.0`, install from GitHub on bodster.forestry.md, then
    `curl -s https://bodster.forestry.md/ | findstr webmention`.
 4. **End-to-end**: link to a forestry page from a bodster.com note, send the mention
