@@ -91,10 +91,29 @@ there it should hold the *garden* domain, not the account domain.
 2. **Normalisation**: try `https://Bodster.com/`, `bodster.com/`, `bodster.com/path?q=1`,
    `bad domain`, empty. Check the output each time; the last two must produce no tag.
 3. **Forestry**: tag `v0.1.0`, install from GitHub on bodster.forestry.md, then
-   `curl -s https://bodster.forestry.md/ | findstr webmention`.
-4. **End-to-end**: link to a forestry page from a bodster.com note, send the mention
-   (curl to the endpoint, or Telegraph), confirm it appears at
+   `curl.exe -s https://bodster.forestry.md/ | findstr webmention`.
+   Without a GitHub *Release* (a tag alone isn't one), installers use `main`.
+4. **End-to-end**: link to a forestry page from another page (any site, including the
+   forestry garden itself), send the mention (curl to the endpoint, or Telegraph), confirm it appears at
    `https://webmention.io/api/mentions.jf2?domain=bodster.forestry.md&token=<key>`.
+
+Notes from running it:
+- In Windows PowerShell, `curl` is an alias for `Invoke-WebRequest`; use `curl.exe`.
+- The source page must link to the target with an **absolute** URL. webmention.io rejected
+  a relative `href="/projects/project-a/"` with `no_link_found`.
+- A `201`/`queued` reply only means received. Check the `location` status URL
+  (no token needed) for `success` or the rejection reason; rejected mentions aren't stored.
+- webmention.io accepts mentions where source and target are on the same site.
+- The dev build can abort on Windows with `EBUSY` copying `dist/favicon.svg`
+  (`eleventy-plugin-gen-favicons` copies it on every page render in parallel). Garden issue, not this plugin.
+
+Results (2026-09-30), all passing:
+1. Tag present in local build; gone with the domain unset; no `[plugins]` warnings.
+2. All normalisation cases as expected (rendered with the garden's Nunjucks, autoescape on).
+3. bodster.forestry.md: exactly one tag on the home page and 7 note pages.
+4. Mention from `/projects/project-a/plan-a/` to `/projects/project-a/` stored in the
+   bodster.com account (`wm-id` 2036737) and returned by the `domain=bodster.forestry.md` query
+   and the dashboard.
 
 ## Release
 - `v0.1.0` once forestry test passes.
