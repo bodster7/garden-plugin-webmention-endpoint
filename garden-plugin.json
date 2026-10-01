@@ -1,7 +1,7 @@
 {
   "id": "webmention-endpoint",
   "name": "Webmention Endpoint",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Advertises a webmention.io endpoint on every page so your garden can receive webmentions, without editing the site template.",
   "author": "Ian Henderson",
   "slots": {

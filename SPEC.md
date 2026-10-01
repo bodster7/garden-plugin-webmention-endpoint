@@ -116,8 +116,10 @@ Results (2026-09-30), all passing:
    and the dashboard.
 
 ## Release
-- `v0.1.0` once forestry test passes.
+- `v0.1.0` once forestry test passes. Tagged 2026-09-30 (tag only, no GitHub Release).
 - `v1.0.0` + gallery PR to `oleeskild/digitalgarden-plugins` after a soak period.
+  Soak done 2026-10-01 (further testing on bodster.forestry.md and bodster.com); released as `v1.0.0`
+  with a GitHub Release, which installers need to pick a version over `main`.
 - Repo: `garden-plugin-webmention-endpoint`, standalone, MIT licence.
 - `screenshot.png`: the plugin has no visible UI, so use an illustration
   (e.g. the emitted tag in view-source), as the analytics plugin did.
