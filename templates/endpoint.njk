@@ -1,11 +1,20 @@
 {#-
   Advertises https://webmention.io/<domain>/webmention. The domain setting is
   normalised (trim, lowercase, drop scheme, path, query and fragment); if what's
-  left isn't hostname-shaped, nothing is emitted. Variables are prefixed because
-  {% set %} in an included template leaks into the including layout.
+  left isn't hostname-shaped, nothing is emitted.
+
+  Optionally adds <link rel="me"> for signing in to webmention.io via IndieLogin.
+  relMe is only trimmed; anything that isn't a plain https:// URL emits nothing.
+
+  The two tags are independent. Variables are prefixed because {% set %} in an
+  included template leaks into the including layout.
 -#}
 {%- set webmentionEndpointDomain = (pluginSettings.domain or "") | string | trim | lower | replace(r/^https?:\/\//, "") -%}
 {%- set webmentionEndpointDomain = webmentionEndpointDomain.split("/")[0].split("?")[0].split("#")[0] -%}
 {%- if r/^[a-z0-9.-]+(:[0-9]+)?$/.test(webmentionEndpointDomain) %}
 <link rel="webmention" href="https://webmention.io/{{ webmentionEndpointDomain }}/webmention">
+{%- endif -%}
+{%- set webmentionEndpointRelMe = (pluginSettings.relMe or "") | string | trim -%}
+{%- if r/^https:\/\/[^\s"'<>]+$/.test(webmentionEndpointRelMe) %}
+<link rel="me" href="{{ webmentionEndpointRelMe }}">
 {%- endif -%}
