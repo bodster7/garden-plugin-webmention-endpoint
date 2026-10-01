@@ -2,7 +2,7 @@
 
 Receive webmentions on your [Digital Garden](https://github.com/oleeskild/digitalgarden) without editing its template.
 
-![The webmention tag in a page's head](screenshot.png)
+![The webmention and rel="me" tags in a page's head](screenshot.png)
 
 ## The problem
 
